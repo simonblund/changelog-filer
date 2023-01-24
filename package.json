@@ -1,0 +1,34 @@
+{
+  "name": "version-filer",
+  "version": "1.0.0",
+  "description": "Github action to writeout versions simply.",
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "ncc build src/index.ts -o lib",
+    "test": "jest --coverage"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/simonblund/version-filer.git"
+  },
+  "keywords": [
+    "versioning",
+    "version",
+    "bump"
+  ],
+  "author": "Simon Blomsterlund",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/simonblund/version-filer/issues"
+  },
+  "homepage": "https://github.com/simonblund/version-filer#readme",
+  "devDependencies": {
+    "@vercel/ncc": "^0.36.0",
+    "jest": "^29.3.1",
+    "ts-jest": "^29.0.5",
+    "typescript": "^4.9.4"
+  },
+  "dependencies": {
+    "@actions/core": "^1.10.0"
+  }
+}

@@ -1,0 +1,32 @@
+name: Write new version file
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.ref }} #This is because PR events works differently.
+
+      - name: Figure out the new version
+        id: new_version
+        uses: mathieudutour/github-tag-action@v6.1
+        with:
+          dry_run: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Write the version file
+        uses: simonblund/version-filer@v0.5
+        with:
+          value: ${{ steps.new_version.outputs.new_tag }}
+      - name: GIT commit and push all changed files
+        env: 
+          CI_COMMIT_MESSAGE: "version is now ${{ steps.new_version.outputs.new_tag }}"
+          CI_COMMIT_AUTHOR: Continuous Integration
+        run: |
+          git config --global user.name "${{ env.CI_COMMIT_AUTHOR }}"
+          git config --global user.email "username@users.noreply.github.com"
+          git commit -a -m "${{ env.CI_COMMIT_MESSAGE }}"
+          git push

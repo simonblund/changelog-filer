@@ -64,12 +64,13 @@ async function getPrComments(octokit:Octokit & Api & {
 }, event:PullRequestEvent){
     
     const issueComments = await octokit.rest.issues.listComments({
-        owner: event.repository.owner.login,
-        repo: event.repository.name,
+        ...github.context.repo,
         issue_number: event.pull_request.number
     })
 
-    return issueComments
+    return issueComments.data.map(comment => {
+        return comment.body_html
+    })
 
 }
 

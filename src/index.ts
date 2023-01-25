@@ -69,7 +69,8 @@ async function getPrComments(octokit:Octokit & Api & {
     })
 
     return issueComments.data.map(comment => {
-        return comment.body
+        core.info(JSON.stringify(comment))
+        return comment.body_text
     })
 
 }

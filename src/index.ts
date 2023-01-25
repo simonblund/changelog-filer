@@ -69,9 +69,7 @@ async function getPrComments(octokit:Octokit & Api & {
         issue_number: event.pull_request.number
     })
 
-    return issueComments.data.map(comment => {
-        return comment.body_html
-    }).filter(comment => comment !== undefined)
+    return issueComments
 
 }
 

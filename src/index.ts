@@ -1,9 +1,16 @@
 import * as core from '@actions/core'
+
+import * as github from '@actions/github'
 import * as fs from 'node:fs/promises';
+import {PullRequestEvent} from '@octokit/webhooks-types'
+import { Context } from '@actions/github/lib/context';
+import { Octokit } from '@octokit/core';
+import { PaginateInterface } from '@octokit/plugin-paginate-rest/dist-types/types';
+import { Api } from '@octokit/plugin-rest-endpoint-methods/dist-types/types';
 
 async function run(): Promise<void> {
     try {
-        const prcomment: string = core.getInput('prcomment')
+        const token = core.getInput('token');
         const write: string = core.getInput('write')
         const filename: string = core.getInput('filename')
         const filelocation: string = core.getInput('filelocation')
@@ -11,9 +18,29 @@ async function run(): Promise<void> {
         const createdAt: string = new Date().toISOString()
         
         core.info(`Writing changelog to file ${filelocation}${filename}`)
-        core.info(prcomment)
-
         
+
+        if (github.context.eventName !== 'pull_request') {
+            throw Error("Not working on a pull request")
+          }
+        
+        const eventPayload = github.context.payload as PullRequestEvent
+        
+        const octokit:Octokit & Api & {
+            paginate: PaginateInterface;
+        } = github.getOctokit(token)
+
+        const prComments = await getPrComments(octokit, eventPayload)
+        core.info(JSON.stringify(prComments))
+
+        if(prComments == undefined || prComments.length <= 0){
+            throw Error("No pr comments found")
+        }
+
+        const changelogComment = findChangelogComment(prComments)
+        core.info(JSON.stringify(changelogComment))
+
+
         
         core.setOutput('version_type','')
         core.setOutput('json_changelog','')
@@ -24,6 +51,28 @@ async function run(): Promise<void> {
     } catch (error) {
         if (error instanceof Error) core.setFailed(error.message)
     }
+}
+
+function findChangelogComment(comments:(string|undefined)[]){
+    return comments.filter(comment => {
+        return comment !== undefined && comment.includes("Changelog - changelog-power")
+    })[0]
+}
+
+async function getPrComments(octokit:Octokit & Api & {
+    paginate: PaginateInterface;
+}, event:PullRequestEvent){
+    
+    const issueComments = await octokit.rest.issues.listComments({
+        owner: event.repository.owner.login,
+        repo: event.repository.name,
+        issue_number: event.pull_request.number
+    })
+
+    return issueComments.data.map(comment => {
+        return comment.body_html
+    }).filter(comment => comment !== undefined)
+
 }
 
 async function writeFile(filename:string, filelocation:string, comment:string, value:string): Promise<void>{

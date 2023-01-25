@@ -3,9 +3,9 @@ description: 'Reading a changelog comment, writing it to a file. And as an extra
 author: 'Simon Blomsterlund'
 
 inputs:
-  prcomment:
+  token:
     required: true
-    description: 'the actual comment'
+    description: 'Github Token'
   
   write: 
     required: false

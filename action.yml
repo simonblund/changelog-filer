@@ -1,35 +1,38 @@
-name: 'Version Filer'
-description: 'Agnostic way of writing a string to a file'
+name: 'Changelog Filer'
+description: 'Reading a changelog comment, writing it to a file. And as an extra, determines change type.'
 author: 'Simon Blomsterlund'
+
 inputs:
-  prepend: 
-    required: false
-    description: 'string that goes before the value'
-    default: '__version__='
-  
-  value:
+  prcomment:
     required: true
-    description: 'the actual value'
+    description: 'the actual comment'
   
-  append: 
+  write: 
     required: false
-    description: 'string that goes after the value'
-    default: ''
+    description: 'Write to the changelog'
+    default: true
 
   filename:
     required: false
-    description: 'Name of the file'
-    default: '__version__.py'
+    description: 'Name of the changelog file'
+    default: 'CHANGELOG.md'
   
   filelocation:
     required: false
     description: 'File location relative to root, leave empty for root'
     default: ''
   
-  one_line_comment_sign:
-    required: false
-    description: 'Sign that goes before a single line comment in your programming language'
-    default: '#'
+outputs:
+  version_type:
+    description: 'Version type as one of [MAJOR, MINOR, PATCH]'
+  
+  json_changelog:
+    description: 'Changelog as json'
+  
+  md_changelog:
+    description: 'Changelog as md formatted string.'
+
+
 runs:
   using: 'node16'
   main: 'lib/index.js'

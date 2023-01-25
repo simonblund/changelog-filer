@@ -3,20 +3,22 @@ import * as fs from 'node:fs/promises';
 
 async function run(): Promise<void> {
     try {
-        const prepend: string = core.getInput('prepend')
-        const value: string = core.getInput('value')
-        const append: string = core.getInput('append')
+        const prcomment: string = core.getInput('prcomment')
+        const write: string = core.getInput('write')
         const filename: string = core.getInput('filename')
         const filelocation: string = core.getInput('filelocation')
-        const one_line_comment_sign: string = core.getInput('one_line_comment_sign')
 
         const createdAt: string = new Date().toISOString()
         
-        core.info(`Going to write ${prepend}${value}${append} to file ${filelocation}${filename}`)
-        const comment: string = `${one_line_comment_sign} Written by version-filer, manual editing of this file might not cause desired effect. ${createdAt}`
-        const valueString:string = `${prepend}${value}${append}`
+        core.info(`Writing changelog to file ${filelocation}${filename}`)
+        core.info(prcomment)
 
-        await writeFile(filename, filelocation, comment, valueString)
+        
+        
+        core.setOutput('version_type','')
+        core.setOutput('json_changelog','')
+        core.setOutput('md_changelog','')
+        
 
         core.setOutput('time', new Date().toTimeString())
     } catch (error) {

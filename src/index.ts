@@ -67,6 +67,7 @@ async function getPrComments(octokit:Octokit & Api & {
         ...github.context.repo,
         issue_number: event.pull_request.number
     })
+    core.info(JSON.stringify(issueComments))
 
     return issueComments.data.map(comment => {
         core.info(JSON.stringify(comment))

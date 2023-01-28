@@ -25,6 +25,8 @@ async function run(): Promise<void> {
 
         let comment:string
 
+        core.info(JSON.stringify(github.context.payload))
+
         switch(github.context.eventName){
             case 'pull_request':
                     const eventPayloadPr = github.context.payload as PullRequestEvent

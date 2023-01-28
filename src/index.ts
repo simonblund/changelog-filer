@@ -2,7 +2,7 @@ import * as core from '@actions/core'
 
 import * as github from '@actions/github'
 import * as fs from 'node:fs/promises';
-import {PullRequestEvent} from '@octokit/webhooks-types'
+import {PullRequestEvent, IssueCommentEvent} from '@octokit/webhooks-types'
 import { Context } from '@actions/github/lib/context';
 import { Octokit } from '@octokit/core';
 import { PaginateInterface } from '@octokit/plugin-paginate-rest/dist-types/types';
@@ -16,30 +16,32 @@ async function run(): Promise<void> {
         const filelocation: string = core.getInput('filelocation')
 
         const createdAt: string = new Date().toISOString()
-        
-        core.info(`Writing changelog to file ${filelocation}${filename}`)
-        
 
-        if (github.context.eventName !== 'pull_request') {
-            throw Error("Not working on a pull request")
-          }
-        
-        const eventPayload = github.context.payload as PullRequestEvent
-        
         const octokit:Octokit & Api & {
             paginate: PaginateInterface;
         } = github.getOctokit(token)
+        
+        core.info(`Writing changelog to file ${filelocation}${filename}`)
 
-        const prComments = await getPrComments(octokit, eventPayload)
-        core.info(JSON.stringify(prComments))
+        let comment:string
 
-        if(prComments == undefined || prComments.length <= 0){
-            throw Error("No pr comments found")
+        switch(github.context.eventName){
+            case 'pull_request':
+                    const eventPayloadPr = github.context.payload as PullRequestEvent
+                    comment = await handlePullRequestEvent(octokit, eventPayloadPr)
+                    break
+            
+                case 'issue_comment':
+                    const eventPayloadIssueComment = github.context.payload as IssueCommentEvent
+                    comment = handleIssueCommentEvent(octokit, eventPayloadIssueComment)
+                    break
+
+                default:
+                    throw Error(`event_name: ${github.context.eventName} isn't handled`)
+
         }
-
-        const changelogComment = findChangelogComment(prComments)
-        core.info(JSON.stringify(changelogComment))
-
+        
+        
 
         
         core.setOutput('version_type','')
@@ -53,10 +55,48 @@ async function run(): Promise<void> {
     }
 }
 
+function handleIssueCommentEvent(octokit:Octokit & Api & {
+    paginate: PaginateInterface;
+}, event:IssueCommentEvent){
+
+    const comment = event.comment.body
+
+    if(!comment.includes("Changelog - changelog-power")){
+        throw Error(`comment did not include changelog: ${comment}`)
+    }
+    
+    core.info(JSON.stringify(comment))
+
+    return comment
+
+}
+
+async function handlePullRequestEvent(octokit:Octokit & Api & {
+    paginate: PaginateInterface;
+}, event:PullRequestEvent){
+    const prComments = await getPrComments(octokit, event)
+    core.info(JSON.stringify(prComments))
+    
+    if(prComments == undefined || prComments.length <= 0){
+        throw Error("No pr comments found")
+    }
+
+    const changelogComment = findChangelogComment(prComments)
+
+    if(changelogComment === undefined){
+        throw Error("No changelog comment found in PR comments")
+    }
+    core.info(JSON.stringify(changelogComment))
+
+    return changelogComment
+
+}
+
 function findChangelogComment(comments:(string|undefined)[]){
     return comments.filter(comment => {
         return comment !== undefined && comment.includes("Changelog - changelog-power")
-    })[0]
+    }).at(0)
+
 }
 
 async function getPrComments(octokit:Octokit & Api & {

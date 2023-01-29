@@ -24,13 +24,8 @@ async function run(): Promise<void> {
             paginate: PaginateInterface;
         } = github.getOctokit(token)
 
-        core.info("VERSION 2")
-        core.info(`Writing changelog to file ${filelocation}${filename}`)
-
         let comment: string
         let pr_number: number
-
-        core.info(JSON.stringify(github.context.payload))
 
         switch (github.context.eventName) {
             case 'pull_request':
@@ -60,15 +55,18 @@ async function run(): Promise<void> {
 
         if (!previousVersion) {
             previousVersion = await getPreviousVersion(octokit, tagPrefix)
+            core.info(`Previous version determined by tags was ${previousVersion}`)
         }
         if (!previousVersion) {
-            core.info(JSON.stringify(changelog))
             throw Error("Could ot determine latest tag")
         }
         changelog.version = calculateVersion(changelog.versionType, previousVersion)
 
+        core.info(`New version calculated is ${changelog.version}`)
+
         const changelogMD = createMDstring(changelog)
         if (write) {
+            core.info(`Writing changelog to file ${filelocation}${filename}`)
             updateChangelogFile(filename, filelocation, changelog, changelogMD)
         }
 
@@ -95,8 +93,6 @@ function handleIssueCommentEvent(octokit: Octokit & Api & {
         throw Error(`comment did not include changelog: ${comment}`)
     }
 
-    core.info(JSON.stringify(comment))
-
     return comment
 }
 
@@ -104,7 +100,6 @@ async function handlePullRequestEvent(octokit: Octokit & Api & {
     paginate: PaginateInterface;
 }, event: PullRequestEvent) {
     const prComments = await getPrComments(octokit, event)
-    core.info(JSON.stringify(prComments))
 
     if (prComments == undefined || prComments.length <= 0) {
         throw Error("No pr comments found")
@@ -115,7 +110,6 @@ async function handlePullRequestEvent(octokit: Octokit & Api & {
     if (changelogComment === undefined) {
         throw Error("No changelog comment found in PR comments")
     }
-    core.info(JSON.stringify(changelogComment))
 
     return changelogComment
 
@@ -138,10 +132,8 @@ async function getPrComments(octokit: Octokit & Api & {
         ...github.context.repo,
         issue_number: event.pull_request.number
     })
-    core.info(JSON.stringify(issueComments))
 
     return issueComments.data.map(comment => {
-        core.info(JSON.stringify(comment))
         return comment.body_text
     })
 

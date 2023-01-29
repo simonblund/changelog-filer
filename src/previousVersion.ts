@@ -19,7 +19,6 @@ export async function getPreviousVersion(octokit: Octokit & Api & {
     paginate: PaginateInterface;
 }, tagPrefix:string) {
     const tags = await listTagsInRepo(octokit)
-    core.info(JSON.stringify(tags))
     return findLatestTag(tags, tagPrefix)
 }
 

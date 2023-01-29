@@ -303,9 +303,10 @@ export async function updateChangelogFile(filename: string, filelocation: string
         if(prev.rowStart == undefined || curr.rowStart ==undefined){
             throw Error("Missing Rowstart for "+curr.rowStart)
         }
-        return prev.rowStart < curr.rowStart ? prev: curr
+        return prev.rowStart > curr.rowStart ? prev: curr
     }, {
-        rowStart: 0
+        rowStart: 0,
+        rowEnd:0
     })
 
     writeFile(file, fileDataRowArray, changelogMD, latestEntryInFile.rowStart, latestEntryInFile.rowEnd)

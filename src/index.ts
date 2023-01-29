@@ -7,6 +7,7 @@ import { Context } from '@actions/github/lib/context';
 import { Octokit } from '@octokit/core';
 import { PaginateInterface } from '@octokit/plugin-paginate-rest/dist-types/types';
 import { Api } from '@octokit/plugin-rest-endpoint-methods/dist-types/types';
+import { getPreviousVersion } from './previousVersion';
 
 async function run(): Promise<void> {
     try {
@@ -14,7 +15,7 @@ async function run(): Promise<void> {
         const write: string = core.getInput('write')
         const filename: string = core.getInput('filename')
         const filelocation: string = core.getInput('filelocation')
-        const previousVersion: string = core.getInput('previous_version')
+        let previousVersion: string|undefined = core.getInput('previous_version')
 
         const createdAt: string = new Date().toISOString()
 
@@ -54,6 +55,14 @@ async function run(): Promise<void> {
 
         if (!changelog.versionType) {
             throw Error("Not able to determine versiontype")
+        }
+
+        if(!previousVersion){
+            previousVersion= await getPreviousVersion(octokit)
+        }
+        if(!previousVersion){
+            core.info(JSON.stringify(changelog))
+            throw Error("Could ot determine latest tag")
         }
         changelog.version = calculateVersion(changelog.versionType, previousVersion)
 
@@ -116,6 +125,8 @@ function findChangelogComment(comments: (string | undefined)[]) {
     }).at(0)
 
 }
+
+
 
 async function getPrComments(octokit: Octokit & Api & {
     paginate: PaginateInterface;

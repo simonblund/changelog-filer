@@ -8,7 +8,7 @@ inputs:
     description: 'Github Token'
   
   previous_version:
-    required: true
+    required: false
     description: 'Previous version, if you want to calculate version and write to changelog'
 
   write: 

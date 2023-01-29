@@ -12,10 +12,11 @@ import { getPreviousVersion } from './previousVersion';
 async function run(): Promise<void> {
     try {
         const token = core.getInput('token');
-        const write: string = core.getInput('write')
+        const write: boolean = Boolean(core.getInput('write'))
         const filename: string = core.getInput('filename')
         const filelocation: string = core.getInput('filelocation')
-        let previousVersion: string|undefined = core.getInput('previous_version')
+        const tagPrefix: string = core.getInput("tag_prefix")
+        let previousVersion: string | undefined = core.getInput('previous_version')
 
         const createdAt: string = new Date().toISOString()
 
@@ -57,18 +58,19 @@ async function run(): Promise<void> {
             throw Error("Not able to determine versiontype")
         }
 
-        if(!previousVersion){
-            previousVersion= await getPreviousVersion(octokit)
+        if (!previousVersion) {
+            previousVersion = await getPreviousVersion(octokit, tagPrefix)
         }
-        if(!previousVersion){
+        if (!previousVersion) {
             core.info(JSON.stringify(changelog))
             throw Error("Could ot determine latest tag")
         }
         changelog.version = calculateVersion(changelog.versionType, previousVersion)
 
         const changelogMD = createMDstring(changelog)
-
-        updateChangelogFile(filename, filelocation, changelog, changelogMD)
+        if (write) {
+            updateChangelogFile(filename, filelocation, changelog, changelogMD)
+        }
 
         core.setOutput('new_version', changelog.version)
         core.setOutput('version_type', changelog.versionType)
@@ -294,7 +296,19 @@ export async function updateChangelogFile(filename: string, filelocation: string
     })
     if (prEntryInFile !== undefined) {
         writeFile(file, fileDataRowArray, changelogMD, prEntryInFile.rowStart, prEntryInFile.rowEnd)
+        return
     }
+
+    const latestEntryInFile = entriesInFile.reduce((prev, curr)=>{
+        if(prev.rowStart == undefined || curr.rowStart ==undefined){
+            throw Error("Missing Rowstart for "+curr.rowStart)
+        }
+        return prev.rowStart < curr.rowStart ? prev: curr
+    }, {})
+
+    writeFile(file, fileDataRowArray, changelogMD, latestEntryInFile.rowStart, latestEntryInFile.rowEnd)
+
+
 
 
     // If it doesn't let's append our changelog entry to the top.

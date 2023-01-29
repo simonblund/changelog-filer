@@ -15,6 +15,11 @@ inputs:
     required: false
     description: 'Write to the changelog'
     default: true
+  
+  tag_prefix:
+    required: false
+    description: 'Prefix to use for finding versiontags'
+    default: 'v'
 
   filename:
     required: false

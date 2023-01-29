@@ -17,10 +17,10 @@ export type Tag = {
 };
 export async function getPreviousVersion(octokit: Octokit & Api & {
     paginate: PaginateInterface;
-}) {
+}, tagPrefix:string) {
     const tags = await listTagsInRepo(octokit)
     core.info(JSON.stringify(tags))
-    return tags.at(0)?.name
+    return findLatestTag(tags, tagPrefix)
 }
 
 /*
@@ -45,10 +45,44 @@ async function listTagsInRepo(
 
     return listTagsInRepo(octokit, fetchAllTags, [...fetchedTags, ...tags.data], page + 1);
 }
-function findLatestTag(tags:Tag[], tagPrefix:string){
+export function findLatestTag(tags: Tag[], tagPrefix: string) {
     const prefixRegex = new RegExp(`^${tagPrefix}`);
-    return tags.find(tag=>{
-        tag.name.match(prefixRegex)
-        tag.commit.sha=="HEAD"
-    })
+    const compatibleTags = tags.filter(tag => {
+        return tag.name.match(prefixRegex)
+    }).reduce((prev, curr) => {
+        return evaluateSemver(prev, curr.name, tagPrefix)
+    }, "")
+    return compatibleTags
+
+}
+
+export function evaluateSemver(first: string, second: string, tagPrefix: string = "") {
+    const firstArr = first.replace(tagPrefix, "").split(".").map(n => Number(n))
+    const secondArr = second.replace(tagPrefix, "").split(".").map(n => Number(n))
+    //major
+    if (firstArr[0] > secondArr[0]) {
+        return first
+    }
+
+    if (firstArr[0] < secondArr[0]) {
+        return second
+    }
+    //minor
+    if (firstArr[1] > secondArr[1]) {
+        return first
+    }
+
+    if (firstArr[1] < secondArr[1]) {
+        return second
+    }
+    //pathch
+    if (firstArr[2] > secondArr[2]) {
+        return first
+    }
+
+    if (firstArr[2] < secondArr[2]) {
+        return second
+    }
+    return first
+
 }

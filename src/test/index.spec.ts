@@ -1,4 +1,4 @@
-import { getChangelogValues, calculateVersion, getVersionType, ChangeLog, createMDstring } from "..";
+import { getChangelogValues, calculateVersion, getVersionType, ChangeLog, createMDstring, updateChangelogFile } from "..";
 import { describe, expect, test } from '@jest/globals';
 
 
@@ -35,7 +35,7 @@ describe('getVersionType', () => {
 
     test('when versiontype is major should return major', () => {
         const body = versionChange(changelogparts, "Major", "Patch")
-        
+
         expect(getVersionType(body)).toBe("major")
     })
     test('when versiontype is minor should return minor', () => {
@@ -63,18 +63,26 @@ describe('calculateVersion', () => {
 
 })
 
-const examplechangelogobject: ChangeLog= {
+describe('updateChangelogFile', () => {
+    test('when versiontype is patch should update patch', async () => {
+        await expect(Promise.resolve(updateChangelogFile("CHANGELOG.md", "", examplechangelogobject, createMDstring(examplechangelogobject)))).resolves.toBeUndefined()
+    })
+
+
+})
+
+const examplechangelogobject: ChangeLog = {
     version: "1.2.3",
     created_at: "12.12.2012",
     pr_number: 123,
     versionType: 'patch',
-    added: [ 'fixed somethings', "Fixed other things, and so on..." ],
+    added: ['fixed somethings', "Fixed other things, and so on..."],
     changed: ['changed something too'],
     deprecated: [],
     removed: [],
     fixed: [],
     security: []
-  }
+}
 // describe('createMDstring', () => {
 //     test('when versiontype is patch should update patch', () => {
 //         expect(createMDstring(examplechangelogobject)).toBe("## [1.2.3] - 12.12.2012 - PRnumber:123 \r\n\r\n### added \r\n \r\n- fixed somethings\r\n- Fixed other things, and so on...\r\n\r\n### changed\r\n- changed something too")
@@ -87,8 +95,8 @@ const examplechangelogobject: ChangeLog= {
 //     expect(body).toBe("- Version type bold (double asterisk) the one you are doing) - **Major** - Minor- Patch")
 // })
 
-function versionChange(parts: string[], to:string, from:string) {
-    let body:string[] = JSON.parse(JSON.stringify(parts)); // adh the age old deepcopy issue
+function versionChange(parts: string[], to: string, from: string) {
+    let body: string[] = JSON.parse(JSON.stringify(parts)); // adh the age old deepcopy issue
     body[0] = body[0].split("-").map(p => {
         const pTrimmed = p.trim()
         if (pTrimmed.includes(from)) {
@@ -103,13 +111,13 @@ function versionChange(parts: string[], to:string, from:string) {
     return body
 }
 
-function changelogChange(parts: string[], heading:string, insertions:string[]) {
-    let body:string[] = JSON.parse(JSON.stringify(parts)); // adh the age old deepcopy issue
+function changelogChange(parts: string[], heading: string, insertions: string[]) {
+    let body: string[] = JSON.parse(JSON.stringify(parts)); // adh the age old deepcopy issue
     const newLines = insertions.map(i => {
         return `- ${i}`
     }).join("\r\n")
-    const result = body.map(p =>{
-        if(p.trimStart().startsWith(heading)){
+    const result = body.map(p => {
+        if (p.trimStart().startsWith(heading)) {
             p = p + newLines
         }
         return p

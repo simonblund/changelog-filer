@@ -64,10 +64,13 @@ async function run(): Promise<void> {
         core.setOutput('new_version', changelog.version)
         core.setOutput('version_type', changelog.versionType)
         core.setOutput('json_changelog', JSON.stringify(changelog))
-        core.setOutput('md_changelog', changelogMD)
+        core.setOutput('md_changelog', changelogMD.join('\n'))
         core.setOutput('time', new Date().toTimeString())
     } catch (error) {
-        if (error instanceof Error) core.setFailed(error.message)
+        if (error instanceof Error) {
+            core.warning(error)
+            core.setFailed(error.message)
+        }
     }
 }
 
@@ -209,7 +212,7 @@ export function getVersionType(parts: string[]) {
 }
 
 export function createMDstring(changelog: ChangeLog) {
-    const title = `## [${changelog.version}] - ${changelog.created_at} - PRnumber:${changelog.pr_number} \r\n\r\n`
+    const title = `## [${changelog.version}] - ${changelog.created_at} - PRnumber:${changelog.pr_number}`
 
     const changeParts = ["added", "changed", "deprecated", "removed", "fixed", "security"]
     const parts = Object.entries(changelog)
@@ -220,22 +223,72 @@ export function createMDstring(changelog: ChangeLog) {
                 return `- ${line}`.trim()
             }).join("\r\n")
 
-            return `### ${key} \r\n\r\n${values}`
-        }).join("\n\r\n\r")
+            return `### ${key} \r\n${values}`
+        })
 
-    return title + parts
+    return [title].concat(parts)
 }
 
-async function writeFile(filename: string, filelocation: string, comment: string, value: string): Promise<void> {
+async function writeFile(file: string, originalFileArray: string[], newEntry: string[], startRow?: number, endRow?: number): Promise<void> {
+    let content: string[] = originalFileArray
+
+    if (endRow == undefined || startRow == undefined) {
+        throw Error("When writing the changelog file startrow or endrow was missing" + startRow + " " + endRow)
+    }
+
+    content.splice(startRow, endRow - startRow, ...newEntry)
+
+    const tempfile = "CHANGELOG2.md"
+    return fs.writeFile(tempfile, content.join("\n"))
+}
+
+
+export interface ChangeLogEntry extends ChangeLog {
+    rowStart?: number,
+    rowEnd?: number
+}
+export async function updateChangelogFile(filename: string, filelocation: string, changelog: ChangeLog, changelogMD: string[]) {
     const file: string = filelocation + filename
-    const content: string = comment + "\n" + value
-    return fs.writeFile(file, content)
+    const fileData = await fs.readFile(file, { encoding: "utf8" });
+
+    const fileDataRowArray = fileData.split("\n")
+
+    let entriesInFile: ChangeLogEntry[] = []
+
+    for (let i = 0; i < fileDataRowArray.length; i++) {
+        if (fileDataRowArray[i].includes("## [")) {
+            // Close the previous changelog entry if one
+            entriesInFile = entriesInFile.map(it => {
+                if (it.rowEnd === undefined) {
+                    it.rowEnd = i - 1
+                }
+                return it
+            })
+            // Create a new changelog entry
+            let a: ChangeLogEntry = {
+                version: fileDataRowArray[i].substring(fileDataRowArray[i].indexOf("[") + 1, fileDataRowArray[i].indexOf("]")),
+                rowStart: i
+            }
+            // If it contains a PR add it
+            if (fileDataRowArray[i].indexOf("PRnumber:") !== -1) {
+                a.pr_number = Number(fileDataRowArray[i].substring(fileDataRowArray[i].indexOf("PRnumber:") + "PRnumber:".length).trim())
+            }
+            entriesInFile.push(a)
+        }
+    }
+
+    // Find if our PR already has an entry, in that case update it
+    const prEntryInFile = entriesInFile.find(it => {
+        return it.pr_number === changelog.pr_number
+    })
+    if (prEntryInFile !== undefined) {
+        writeFile(file, fileDataRowArray, changelogMD, prEntryInFile.rowStart, prEntryInFile.rowEnd)
+    }
+
+
+    // If it doesn't let's append our changelog entry to the top.
 }
 
-export async function updateChangelogFile(filename: string, filelocation: string, changelog:ChangeLog, changelogMD:string){
-    const file: string = filelocation + filename
-    const fileData = fs.readFile(file, { encoding: "utf8" });
-    const fileDataArray = 
-}
+
 
 run()

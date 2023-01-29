@@ -7,6 +7,10 @@ inputs:
     required: true
     description: 'Github Token'
   
+  previous_version:
+    required: true
+    description: 'Previous version, if you want to calculate version and write to changelog'
+
   write: 
     required: false
     description: 'Write to the changelog'
@@ -25,6 +29,9 @@ inputs:
 outputs:
   version_type:
     description: 'Version type as one of [MAJOR, MINOR, PATCH]'
+  
+  new_version:
+    description: 'Version as semver'
   
   json_changelog:
     description: 'Changelog as json'

@@ -235,6 +235,7 @@ async function writeFile(filename: string, filelocation: string, comment: string
 export async function updateChangelogFile(filename: string, filelocation: string, changelog:ChangeLog, changelogMD:string){
     const file: string = filelocation + filename
     const fileData = fs.readFile(file, { encoding: "utf8" });
+    const fileDataArray = 
 }
 
 run()

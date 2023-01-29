@@ -244,7 +244,8 @@ export function createMDstring(changelog: ChangeLog) {
 
 async function writeFile(file: string, originalFileArray: string[], newEntry: string[], startRow?: number, endRow?: number): Promise<void> {
     let content: string[] = originalFileArray
-
+    console.log(startRow)
+    console.log(endRow)
     if (endRow == undefined || startRow == undefined) {
         throw Error("When writing the changelog file startrow or endrow was missing" + startRow + " " + endRow)
     }
@@ -303,9 +304,9 @@ export async function updateChangelogFile(filename: string, filelocation: string
         if(prev.rowStart == undefined || curr.rowStart ==undefined){
             throw Error("Missing Rowstart for "+curr.rowStart)
         }
-        return prev.rowStart > curr.rowStart ? prev: curr
+        return prev.rowStart < curr.rowStart ? prev: curr
     }, {
-        rowStart: 0,
+        rowStart: 8,
         rowEnd:0
     })
 

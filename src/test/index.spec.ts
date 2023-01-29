@@ -74,9 +74,9 @@ describe('updateChangelogFile', () => {
 const examplechangelogobject: ChangeLog = {
     version: "1.2.3",
     created_at: "12.12.2012",
-    pr_number: 123,
+    pr_number: 124,
     versionType: 'patch',
-    added: ['fixed somethings', "Fixed other things, and so on..."],
+    added: ['fixed somethings', "Fixed other thigs, and so on..."],
     changed: ['changed something too'],
     deprecated: [],
     removed: [],

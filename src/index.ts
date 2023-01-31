@@ -99,13 +99,24 @@ function handleIssueCommentEvent(octokit: Octokit & Api & {
 async function handlePullRequestEvent(octokit: Octokit & Api & {
     paginate: PaginateInterface;
 }, event: PullRequestEvent) {
+
+    let changelogComment: string|undefined|null = event.pull_request.body
+    
+    if(changelogComment !== null && changelogComment !==undefined){
+        const res = findChangelogComment([changelogComment])
+        if(res !==undefined){
+            return res
+        }
+         
+    }
+
     const prComments = await getPrComments(octokit, event)
 
     if (prComments == undefined || prComments.length === 0) {
         throw Error("No pr comments found")
     }
 
-    let changelogComment = findChangelogComment(prComments)
+    changelogComment = findChangelogComment(prComments)
 
     if (changelogComment === undefined) {
 
@@ -131,7 +142,7 @@ async function handlePullRequestEvent(octokit: Octokit & Api & {
 
 function findChangelogComment(comments: (string | undefined)[]) {
     return comments.find(comment => {
-        return comment !== undefined && comment.includes("changelog-power")
+        return comment !== undefined && comment !== null && comment.includes("changelog-power")
     })
 
 }

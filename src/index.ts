@@ -111,7 +111,7 @@ async function handlePullRequestEvent(octokit: Octokit & Api & {
 
         const secondTry = await octokit.request({
             method: 'GET',
-            url: event.pull_request.comments_url
+            url: event.pull_request.comments_url+"?sort=created&direction=asc&per_page=99"
         })
         core.info("Doing secondtry to get PR comments " +JSON.stringify(secondTry))
         const secondTryComments = secondTry.data.map((c: { body_text: string; })=>{

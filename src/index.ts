@@ -101,24 +101,37 @@ async function handlePullRequestEvent(octokit: Octokit & Api & {
 }, event: PullRequestEvent) {
     const prComments = await getPrComments(octokit, event)
 
-    if (prComments == undefined || prComments.length <= 0) {
+    if (prComments == undefined || prComments.length === 0) {
         throw Error("No pr comments found")
     }
 
-    const changelogComment = findChangelogComment(prComments)
+    let changelogComment = findChangelogComment(prComments)
 
+    if (changelogComment === undefined) {
+
+        const secondTry = await octokit.request({
+            method: 'GET',
+            url: event.pull_request.comments_url
+        })
+        const secondTryComments = secondTry.data.map((c: { body_text: string; })=>{
+            return c.body_text
+        })
+        changelogComment = findChangelogComment(secondTryComments)
+        
+    }
     if (changelogComment === undefined) {
         throw Error("No changelog comment found in PR comments")
     }
-
     return changelogComment
 
 }
 
+
+
 function findChangelogComment(comments: (string | undefined)[]) {
-    return comments.filter(comment => {
-        return comment !== undefined && comment.includes("Changelog - changelog-power")
-    }).at(0)
+    return comments.find(comment => {
+        return comment !== undefined && comment.includes("changelog-power")
+    })
 
 }
 

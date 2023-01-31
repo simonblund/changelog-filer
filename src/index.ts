@@ -114,8 +114,8 @@ async function handlePullRequestEvent(octokit: Octokit & Api & {
             url: event.pull_request.comments_url+"?sort=created&direction=desc&per_page=99"
         })
         core.info("Doing secondtry to get PR comments " +JSON.stringify(secondTry))
-        const secondTryComments = secondTry.data.map((c: { body_text: string; })=>{
-            return c.body_text
+        const secondTryComments = secondTry.data.map((c: { body: string; })=>{
+            return c.body
         })
         changelogComment = findChangelogComment(secondTryComments)
         
